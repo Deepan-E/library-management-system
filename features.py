@@ -1,5 +1,5 @@
 import db
-
+from helpers import hash_password, verify_password
 
 def add_book(title, author, category, total_copies):
     """Insert a new book. Returns (True/False, message for the user)."""
@@ -109,14 +109,66 @@ def deactivate_member(member_id):
     return True, f"{member['full_name']} has been deactivated."
 
 
-if __name__ == "__main__":
-    from helpers import print_table
+# ---------------------------------------------------------------------
+# Users and login
+# ---------------------------------------------------------------------
+VALID_ROLES = ("ADMIN", "LIBRARIAN")
 
-    print(add_member("Test Member", "9000000001"))
-    print(add_member("Another Name", "9000000001"))   # duplicate phone
-    print_table(search_members("priya"))
-    print_table(search_members("9876"))
-    print(deactivate_member(7))                        # fill in the test ID, see below
-    print(deactivate_member(7))                        # already deactivated
-    print(deactivate_member(9999))                     # does not exist
-    print_table(get_all_members())
+
+def count_users():
+    """Return how many users exist, or None if the database could not be read."""
+    row = db.fetch_one("SELECT COUNT(*) AS total FROM users")
+    if row is None:
+        return None
+    return row["total"]
+
+
+def create_user(username, password, role):
+    """Create a login account. Returns (True/False, message for the user)."""
+    if role not in VALID_ROLES:
+        return False, "The role must be ADMIN or LIBRARIAN."
+
+    existing = db.fetch_one(
+        "SELECT user_id FROM users WHERE username = %s", (username,)
+    )
+    if existing:
+        return False, "That username is already taken."
+
+    # Only the salted hash is stored, never the real password.
+    changed = db.execute(
+        "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
+        (username, hash_password(password), role),
+    )
+    if changed is None:
+        return False, "The user could not be saved."
+    return True, f"{role.title()} account '{username}' created."
+
+
+def login(username, password):
+    """Return the user's details (without the hash) if the login is correct,
+    otherwise None. The caller cannot tell which part was wrong."""
+    user = db.fetch_one(
+        "SELECT user_id, username, password_hash, role FROM users "
+        "WHERE username = %s",
+        (username,),
+    )
+    if user is None or not verify_password(password, user["password_hash"]):
+        return None
+    return {
+        "user_id": user["user_id"],
+        "username": user["username"],
+        "role": user["role"],
+    }
+
+if __name__ == "__main__":
+    print("Users in database:", count_users())
+    print(create_user("tmp_test_user", "secret123", "LIBRARIAN"))
+    print(create_user("tmp_test_user", "secret123", "LIBRARIAN"))   # duplicate
+    print(create_user("tmp_bad_role", "secret123", "BOSS"))          # invalid role
+    print("Correct login:", login("tmp_test_user", "secret123"))
+    print("Wrong password:", login("tmp_test_user", "wrong"))
+    print("Unknown user:", login("nobody", "secret123"))
+
+    # Clean up so the real first-run admin setup still works later.
+    db.execute("DELETE FROM users WHERE username = %s", ("tmp_test_user",))
+    print("Users in database:", count_users())
