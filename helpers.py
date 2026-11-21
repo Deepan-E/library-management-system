@@ -1,3 +1,14 @@
+import getpass
+import hashlib
+import hmac
+import os
+
+# How many times the hash is repeated; more repeats make guessing slower.
+HASH_ITERATIONS = 100_000
+
+
+
+# Input checking
 def get_int(prompt, min_value=None, max_value=None):
     while True:
         text = input(prompt).strip()
@@ -36,7 +47,75 @@ def get_phone(prompt):
         print("A phone number must be exactly 10 digits.")
 
 
+def get_password(prompt, min_length=6):
+    while True:
+        text = getpass.getpass(prompt)
+        if len(text) >= min_length:
+            return text
+        print(f"The password must be at least {min_length} characters.")
+
+
+
+# Password hashing
+def hash_password(password):
+    salt = os.urandom(16)                       # new random salt every time
+    digest = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt, HASH_ITERATIONS
+    )
+    return salt.hex() + "$" + digest.hex()
+
+
+def verify_password(password, stored_value):
+    try:
+        salt_hex, digest_hex = stored_value.split("$")
+        salt = bytes.fromhex(salt_hex)
+        expected = bytes.fromhex(digest_hex)
+    except ValueError:
+        return False                            # stored value is damaged
+
+    actual = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt, HASH_ITERATIONS
+    )
+    return hmac.compare_digest(actual, expected)
+
+
+
+# Table printing
+def _cell(value):
+    """Show a missing value (None) as a dash."""
+    return "-" if value is None else str(value)
+
+
+def print_table(rows):
+    """Print a list of dictionaries as a formatted table."""
+    if not rows:
+        print("No records found.")
+        return
+
+    headers = list(rows[0].keys())
+    widths = {
+        h: max(len(str(h)), max(len(_cell(r[h])) for r in rows))
+        for h in headers
+    }
+
+    line = "+-" + "-+-".join("-" * widths[h] for h in headers) + "-+"
+    print(line)
+    print("| " + " | ".join(str(h).ljust(widths[h]) for h in headers) + " |")
+    print(line)
+    for r in rows:
+        print("| " + " | ".join(_cell(r[h]).ljust(widths[h]) for h in headers) + " |")
+    print(line)
+
+
 if __name__ == "__main__":
-    print("Result:", get_int("Enter a number from 1 to 10: ", 1, 10))
-    print("Result:", get_text("Enter a title (max 20 characters): ", 1, 20))
-    print("Result:", get_phone("Enter a phone number: "))
+    stored = hash_password("secret123")
+    print("Stored value:", stored)
+    print("Correct password:", verify_password("secret123", stored))
+    print("Wrong password:", verify_password("wrong", stored))
+    print("Hashing twice gives different text:", hash_password("secret123") != stored)
+
+    print_table([
+        {"id": 1, "title": "Clean Code", "copies": 2},
+        {"id": 2, "title": "Sapiens", "copies": None},
+    ])
+    print_table([])
