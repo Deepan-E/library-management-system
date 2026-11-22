@@ -256,29 +256,120 @@ def issue_book(book_id, member_id):
             conn.close()
 
 
+# ---------------------------------------------------------------------
+# Circulation: returning books
+# ---------------------------------------------------------------------
+def return_book(issue_id):
+    """Return a book using the ID of its issue record.
+    Calculates the fine automatically. Returns (True/False, message)."""
+
+    # --- Checks: nothing is changed in this part ---
+    issue = db.fetch_one(
+        "SELECT i.issue_id, i.book_id, i.due_date, i.status, b.title "
+        "FROM issues i JOIN books b ON b.book_id = i.book_id "
+        "WHERE i.issue_id = %s",
+        (issue_id,),
+    )
+    if issue is None:
+        return False, "No issue record exists with that ID."
+    if issue["status"] == "RETURNED":
+        return False, "This book has already been returned."
+
+    # --- Fine: Rs FINE_PER_DAY for every day after the due date ---
+    today = date.today()
+    days_late = max(0, (today - issue["due_date"]).days)
+    fine = days_late * FINE_PER_DAY
+
+    # --- The transaction: both changes are saved together, or neither ---
+    conn = None
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        conn.start_transaction()
+
+        # Step 1: close the loan record.
+        cursor.execute(
+            "UPDATE issues SET return_date = %s, status = 'RETURNED', "
+            "fine_amount = %s WHERE issue_id = %s AND status = 'ISSUED'",
+            (today, fine, issue_id),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return False, "This book could not be returned. No changes were saved."
+
+        # Step 2: put the copy back on the shelf.
+        cursor.execute(
+            "UPDATE books SET available_copies = available_copies + 1 "
+            "WHERE book_id = %s",
+            (issue["book_id"],),
+        )
+
+        conn.commit()                           # save both changes
+        if fine > 0:
+            return True, (
+                f"'{issue['title']}' returned {days_late} day(s) late. "
+                f"Fine: Rs {fine}."
+            )
+        return True, f"'{issue['title']}' returned on time. No fine."
+    except mysql.connector.Error as err:
+        if conn is not None:
+            conn.rollback()                     # undo both changes
+        print(f"Database error: {err}")
+        return False, "The book could not be returned. No changes were saved."
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
 # This part runs only when you type: python features.py
 if __name__ == "__main__":
     from helpers import print_table
 
-    print("1. Normal issue:         ", issue_book(2, 4))   # Wings of Fire -> Sneha
-    print("2. Same book twice:      ", issue_book(2, 4))
-    print("3. Deactivated member:   ", issue_book(3, 6))
-    print("4. Unknown book:         ", issue_book(999, 4))
-    print("5. Unknown member:       ", issue_book(2, 999))
-    print("6. Second book:          ", issue_book(3, 4))
-    print("7. Third book:           ", issue_book(5, 4))
-    print("8. Fourth book (limit):  ", issue_book(6, 4))
-    print("9. Last copy of a book:  ", issue_book(4, 5))   # Clean Code -> Karthik
-    print("10. No copy left:        ", issue_book(4, 3))   # Clean Code -> Rahul
+    def find_issue(book_id, member_id):
+        row = db.fetch_one(
+            "SELECT issue_id FROM issues "
+            "WHERE book_id = %s AND member_id = %s AND status = 'ISSUED'",
+            (book_id, member_id),
+        )
+        return row["issue_id"]
 
+    def show_copies():
+        print_table(db.fetch_all(
+            "SELECT book_id, title, total_copies, available_copies "
+            "FROM books WHERE book_id IN (2, 3)"
+        ))
+
+    # Issue two books to Sneha (member 4).
+    print(issue_book(2, 4))       # Wings of Fire
+    print(issue_book(3, 4))       # A Brief History of Time
+    late_id = find_issue(2, 4)
+    ontime_id = find_issue(3, 4)
+
+    # Make the first loan exactly 5 days overdue (issued 19 days ago, due 5 days ago).
+    db.execute(
+        "UPDATE issues SET issue_date = CURDATE() - INTERVAL 19 DAY, "
+        "due_date = CURDATE() - INTERVAL 5 DAY WHERE issue_id = %s",
+        (late_id,),
+    )
+
+    print("\nCopies BEFORE returning:")
+    show_copies()
+
+    print("\nReturn 5 days late: ", return_book(late_id))
+    print("Return on time:     ", return_book(ontime_id))
+    print("Return it again:    ", return_book(late_id))
+    print("Unknown record:     ", return_book(99999))
+
+    print("\nIssue records:")
     print_table(db.fetch_all(
-        "SELECT issue_id, book_id, member_id, issue_date, due_date, status "
-        "FROM issues WHERE issue_id > 7"
+        "SELECT issue_id, book_id, member_id, due_date, return_date, "
+        "fine_amount, status FROM issues WHERE issue_id > 7"
     ))
+    print("Copies AFTER returning:")
+    show_copies()
 
     # Clean up the test records. Use this ONLY in this test, never once you
-    # start entering real records: it deletes every issue with an ID above 7
-    # (the 7 sample records) and recalculates the copies on the shelf.
+    # start entering real records.
     db.execute("DELETE FROM issues WHERE issue_id > 7")
     db.execute(
         "UPDATE books SET available_copies = total_copies - "
