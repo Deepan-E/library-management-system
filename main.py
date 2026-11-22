@@ -1,6 +1,7 @@
 import getpass
 
 import features
+import reports
 from helpers import get_int, get_text, get_phone, get_password, print_table
 
 MAX_LOGIN_ATTEMPTS = 3
@@ -42,9 +43,7 @@ def login_screen():
     print("Too many failed attempts. The program will close.")
     return None
 
-
-
-# Menus
+# Books and members
 
 def books_menu():
     while True:
@@ -104,6 +103,100 @@ def members_menu(user):
         else:
             return
 
+# Circulation: issue, return, books held
+
+def issue_flow():
+    print("Tip: look up IDs in the Books and Members menus first.")
+    book_id = get_int("Book ID: ", 1)
+    member_id = get_int("Member ID: ", 1)
+    _, message = features.issue_book(book_id, member_id)
+    print(message)
+
+
+def return_flow():
+    member_id = get_int("Member ID returning the book: ", 1)
+    member = features.get_member(member_id)
+    if member is None:
+        print("No member exists with that ID.")
+        return
+
+    loans = features.get_member_loans(member_id)
+    if not loans:
+        print(f"{member['full_name']} is not holding any books.")
+        return
+
+    print(f"\nBooks held by {member['full_name']}:")
+    print_table(loans)
+
+    issue_id = get_int("Issue ID to return: ", 1)
+    # Only accept an ID from the list that was just shown.
+    if issue_id not in [loan["issue_id"] for loan in loans]:
+        print("That issue ID is not in the list above.")
+        return
+    _, message = features.return_book(issue_id)
+    print(message)
+
+
+def loans_flow():
+    member_id = get_int("Member ID: ", 1)
+    member = features.get_member(member_id)
+    if member is None:
+        print("No member exists with that ID.")
+        return
+    print(f"\nBooks held by {member['full_name']}:")
+    print_table(features.get_member_loans(member_id))
+
+
+def circulation_menu():
+    while True:
+        print("\n--- CIRCULATION ---")
+        print("1. Issue a book")
+        print("2. Return a book")
+        print("3. View books held by a member")
+        print("0. Back")
+        choice = get_int("Choose an option: ", 0, 3)
+
+        if choice == 1:
+            issue_flow()
+        elif choice == 2:
+            return_flow()
+        elif choice == 3:
+            loans_flow()
+        else:
+            return
+
+
+# Reports
+
+def reports_menu(user):
+    is_admin = user["role"] == "ADMIN"
+    while True:
+        print("\n--- REPORTS ---")
+        print("1. Overdue books")
+        print("2. Most borrowed books")
+        if is_admin:
+            print("3. Fine summary")
+        print("0. Back")
+        choice = get_int("Choose an option: ", 0, 3)
+
+        if choice == 1:
+            print("\nOVERDUE BOOKS")
+            print_table(reports.overdue_books())
+        elif choice == 2:
+            print("\nMOST BORROWED BOOKS")
+            print_table(reports.most_borrowed_books())
+        elif choice == 3:
+            # Hidden from librarians, and checked again here.
+            if not is_admin:
+                print("Only an ADMIN can view the fine summary.")
+            else:
+                print("\nFINE SUMMARY")
+                print_table(reports.fine_summary())
+        else:
+            return
+
+
+# Administration and main menu
 
 def admin_menu():
     while True:
@@ -129,16 +222,22 @@ def main_menu(user):
         print(f"\n=== MAIN MENU  ({user['username']}, {user['role']}) ===")
         print("1. Books")
         print("2. Members")
+        print("3. Circulation (issue / return)")
+        print("4. Reports")
         if is_admin:
-            print("3. Administration")
+            print("5. Administration")
         print("0. Log out")
-        choice = get_int("Choose an option: ", 0, 3)
+        choice = get_int("Choose an option: ", 0, 5)
 
         if choice == 1:
             books_menu()
         elif choice == 2:
             members_menu(user)
         elif choice == 3:
+            circulation_menu()
+        elif choice == 4:
+            reports_menu(user)
+        elif choice == 5:
             if is_admin:
                 admin_menu()
             else:
@@ -146,7 +245,6 @@ def main_menu(user):
         else:
             print("You have been logged out.")
             return
-
 
 
 # Program start
