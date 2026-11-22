@@ -321,59 +321,28 @@ def return_book(issue_id):
             conn.close()
 
 
+
+# Circulation: books held by a member
+
+def get_member_loans(member_id):
+    """Return the books a member currently holds (not yet returned).
+    days_late is 0 for a book that is not overdue."""
+    return db.fetch_all(
+        "SELECT i.issue_id, b.title, b.author, i.issue_date, i.due_date, "
+        "       GREATEST(0, DATEDIFF(CURDATE(), i.due_date)) AS days_late "
+        "FROM issues i "
+        "JOIN books b ON b.book_id = i.book_id "
+        "WHERE i.member_id = %s AND i.status = 'ISSUED' "
+        "ORDER BY i.due_date",
+        (member_id,),
+    )
+
+
 # This part runs only when you type: python features.py
 if __name__ == "__main__":
     from helpers import print_table
 
-    def find_issue(book_id, member_id):
-        row = db.fetch_one(
-            "SELECT issue_id FROM issues "
-            "WHERE book_id = %s AND member_id = %s AND status = 'ISSUED'",
-            (book_id, member_id),
-        )
-        return row["issue_id"]
-
-    def show_copies():
-        print_table(db.fetch_all(
-            "SELECT book_id, title, total_copies, available_copies "
-            "FROM books WHERE book_id IN (2, 3)"
-        ))
-
-    # Issue two books to Sneha (member 4).
-    print(issue_book(2, 4))       # Wings of Fire
-    print(issue_book(3, 4))       # A Brief History of Time
-    late_id = find_issue(2, 4)
-    ontime_id = find_issue(3, 4)
-
-    # Make the first loan exactly 5 days overdue (issued 19 days ago, due 5 days ago).
-    db.execute(
-        "UPDATE issues SET issue_date = CURDATE() - INTERVAL 19 DAY, "
-        "due_date = CURDATE() - INTERVAL 5 DAY WHERE issue_id = %s",
-        (late_id,),
-    )
-
-    print("\nCopies BEFORE returning:")
-    show_copies()
-
-    print("\nReturn 5 days late: ", return_book(late_id))
-    print("Return on time:     ", return_book(ontime_id))
-    print("Return it again:    ", return_book(late_id))
-    print("Unknown record:     ", return_book(99999))
-
-    print("\nIssue records:")
-    print_table(db.fetch_all(
-        "SELECT issue_id, book_id, member_id, due_date, return_date, "
-        "fine_amount, status FROM issues WHERE issue_id > 7"
-    ))
-    print("Copies AFTER returning:")
-    show_copies()
-
-    # Clean up the test records. Use this ONLY in this test, never once you
-    # start entering real records.
-    db.execute("DELETE FROM issues WHERE issue_id > 7")
-    db.execute(
-        "UPDATE books SET available_copies = total_copies - "
-        "(SELECT COUNT(*) FROM issues "
-        " WHERE issues.book_id = books.book_id AND issues.status = 'ISSUED')"
-    )
-    print("Test records removed.")
+    for member_id in (1, 2, 3, 4):
+        member = get_member(member_id)
+        print(f"\nBooks held by {member['full_name']} (ID {member_id}):")
+        print_table(get_member_loans(member_id))
