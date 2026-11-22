@@ -1,5 +1,14 @@
+from datetime import date, timedelta
+
+import mysql.connector
+
 import db
 from helpers import hash_password, verify_password
+
+# Business rules from the brief, kept in named constants.
+LOAN_DAYS = 14                 # days a book can be kept
+MAX_BOOKS_PER_MEMBER = 3       # books one member may hold at the same time
+FINE_PER_DAY = 2               # rupees for every day after the due date
 
 def add_book(title, author, category, total_copies):
     """Insert a new book. Returns (True/False, message for the user)."""
@@ -160,15 +169,120 @@ def login(username, password):
         "role": user["role"],
     }
 
-if __name__ == "__main__":
-    print("Users in database:", count_users())
-    print(create_user("tmp_test_user", "secret123", "LIBRARIAN"))
-    print(create_user("tmp_test_user", "secret123", "LIBRARIAN"))   # duplicate
-    print(create_user("tmp_bad_role", "secret123", "BOSS"))          # invalid role
-    print("Correct login:", login("tmp_test_user", "secret123"))
-    print("Wrong password:", login("tmp_test_user", "wrong"))
-    print("Unknown user:", login("nobody", "secret123"))
+# ---------------------------------------------------------------------
+# Circulation: issuing books
+# ---------------------------------------------------------------------
+def issue_book(book_id, member_id):
+    """Issue one copy of a book to a member.
+    Returns (True/False, message for the user)."""
 
-    # Clean up so the real first-run admin setup still works later.
-    db.execute("DELETE FROM users WHERE username = %s", ("tmp_test_user",))
-    print("Users in database:", count_users())
+    # --- Rule checks: nothing is changed in this part ---
+    member = get_member(member_id)
+    if member is None:
+        return False, "No member exists with that ID."
+    if member["is_active"] == 0:
+        return False, "This member is deactivated and cannot borrow books."
+
+    book = db.fetch_one(
+        "SELECT book_id, title, available_copies FROM books WHERE book_id = %s",
+        (book_id,),
+    )
+    if book is None:
+        return False, "No book exists with that ID."
+    if book["available_copies"] <= 0:
+        return False, f"No copy of '{book['title']}' is available right now."
+
+    held = db.fetch_one(
+        "SELECT COUNT(*) AS total FROM issues "
+        "WHERE member_id = %s AND status = 'ISSUED'",
+        (member_id,),
+    )
+    if held is None:
+        return False, "Could not check how many books the member holds."
+    if held["total"] >= MAX_BOOKS_PER_MEMBER:
+        return False, (
+            f"{member['full_name']} already holds {MAX_BOOKS_PER_MEMBER} books, "
+            "which is the maximum."
+        )
+
+    same_book = db.fetch_one(
+        "SELECT issue_id FROM issues "
+        "WHERE member_id = %s AND book_id = %s AND status = 'ISSUED'",
+        (member_id, book_id),
+    )
+    if same_book:
+        return False, "This member already holds a copy of this book."
+
+    # --- The transaction: both changes are saved together, or neither ---
+    today = date.today()
+    due = today + timedelta(days=LOAN_DAYS)
+
+    conn = None
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        conn.start_transaction()
+
+        # Step 1: record the loan.
+        cursor.execute(
+            "INSERT INTO issues (book_id, member_id, issue_date, due_date) "
+            "VALUES (%s, %s, %s, %s)",
+            (book_id, member_id, today, due),
+        )
+
+        # Step 2: take one copy off the shelf. The 'available_copies > 0'
+        # condition is the final safety net.
+        cursor.execute(
+            "UPDATE books SET available_copies = available_copies - 1 "
+            "WHERE book_id = %s AND available_copies > 0",
+            (book_id,),
+        )
+        if cursor.rowcount == 0:
+            conn.rollback()                     # undo the INSERT as well
+            return False, f"No copy of '{book['title']}' is available right now."
+
+        conn.commit()                           # save both changes
+        return True, (
+            f"Issued '{book['title']}' to {member['full_name']}. "
+            f"Due date: {due}."
+        )
+    except mysql.connector.Error as err:
+        if conn is not None:
+            conn.rollback()                     # undo everything
+        print(f"Database error: {err}")
+        return False, "The book could not be issued. No changes were saved."
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+# This part runs only when you type: python features.py
+if __name__ == "__main__":
+    from helpers import print_table
+
+    print("1. Normal issue:         ", issue_book(2, 4))   # Wings of Fire -> Sneha
+    print("2. Same book twice:      ", issue_book(2, 4))
+    print("3. Deactivated member:   ", issue_book(3, 6))
+    print("4. Unknown book:         ", issue_book(999, 4))
+    print("5. Unknown member:       ", issue_book(2, 999))
+    print("6. Second book:          ", issue_book(3, 4))
+    print("7. Third book:           ", issue_book(5, 4))
+    print("8. Fourth book (limit):  ", issue_book(6, 4))
+    print("9. Last copy of a book:  ", issue_book(4, 5))   # Clean Code -> Karthik
+    print("10. No copy left:        ", issue_book(4, 3))   # Clean Code -> Rahul
+
+    print_table(db.fetch_all(
+        "SELECT issue_id, book_id, member_id, issue_date, due_date, status "
+        "FROM issues WHERE issue_id > 7"
+    ))
+
+    # Clean up the test records. Use this ONLY in this test, never once you
+    # start entering real records: it deletes every issue with an ID above 7
+    # (the 7 sample records) and recalculates the copies on the shelf.
+    db.execute("DELETE FROM issues WHERE issue_id > 7")
+    db.execute(
+        "UPDATE books SET available_copies = total_copies - "
+        "(SELECT COUNT(*) FROM issues "
+        " WHERE issues.book_id = books.book_id AND issues.status = 'ISSUED')"
+    )
+    print("Test records removed.")
