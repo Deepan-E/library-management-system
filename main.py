@@ -202,8 +202,9 @@ def admin_menu():
     while True:
         print("\n--- ADMINISTRATION ---")
         print("1. Create a new user")
+        print("2. Run the DSA demonstration")
         print("0. Back")
-        choice = get_int("Choose an option: ", 0, 1)
+        choice = get_int("Choose an option: ", 0, 2)
 
         if choice == 1:
             username = get_text("New username (3-30 characters): ", 3, 30)
@@ -212,6 +213,8 @@ def admin_menu():
             role = "ADMIN" if get_int("Choose a role: ", 1, 2) == 1 else "LIBRARIAN"
             _, message = features.create_user(username, password, role)
             print(message)
+        elif choice == 2:
+            reports.run_dsa_demo()
         else:
             return
 
