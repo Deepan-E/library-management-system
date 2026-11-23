@@ -337,12 +337,40 @@ def get_member_loans(member_id):
         (member_id,),
     )
 
+def update_copies(book_id, new_total):
+    """Change how many copies the library owns.
+    available_copies is recalculated as: new total - copies currently issued.
+    Returns (True/False, message for the user)."""
+    book = db.fetch_one(
+        "SELECT book_id, title FROM books WHERE book_id = %s", (book_id,)
+    )
+    if book is None:
+        return False, "No book exists with that ID."
 
-# This part runs only when you type: python features.py
-if __name__ == "__main__":
-    from helpers import print_table
+    out = db.fetch_one(
+        "SELECT COUNT(*) AS total FROM issues "
+        "WHERE book_id = %s AND status = 'ISSUED'",
+        (book_id,),
+    )
+    if out is None:
+        return False, "Could not check how many copies are issued."
+    copies_out = out["total"]
 
-    for member_id in (1, 2, 3, 4):
-        member = get_member(member_id)
-        print(f"\nBooks held by {member['full_name']} (ID {member_id}):")
-        print_table(get_member_loans(member_id))
+    if new_total < copies_out:
+        return False, (
+            f"{copies_out} copy/copies of '{book['title']}' are currently "
+            f"issued, so the total cannot be less than {copies_out}."
+        )
+
+    new_available = new_total - copies_out
+    changed = db.execute(
+        "UPDATE books SET total_copies = %s, available_copies = %s "
+        "WHERE book_id = %s",
+        (new_total, new_available, book_id),
+    )
+    if changed is None:
+        return False, "The number of copies could not be updated."
+    return True, (
+        f"'{book['title']}' now has {new_total} copies "
+        f"({new_available} available)."
+    )

@@ -51,8 +51,9 @@ def books_menu():
         print("1. Add a book")
         print("2. View all books")
         print("3. Search by title or author")
+        print("4. Update the number of copies")
         print("0. Back")
-        choice = get_int("Choose an option: ", 0, 3)
+        choice = get_int("Choose an option: ", 0, 4)
 
         if choice == 1:
             title = get_text("Title: ", 1, 120)
@@ -66,6 +67,11 @@ def books_menu():
         elif choice == 3:
             text = get_text("Search text: ", 1, 50)
             print_table(features.search_books(text))
+        elif choice == 4:
+            book_id = get_int("Book ID: ", 1)
+            new_total = get_int("New total number of copies: ", 0, 1000)
+            _, message = features.update_copies(book_id, new_total)
+            print(message)
         else:
             return
 
