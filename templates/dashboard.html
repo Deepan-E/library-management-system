@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | Library Management System</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="welcome-container">
+
+        <h1>Library Dashboard</h1>
+
+        <h2>Welcome, {{ session["username"] }}</h2>
+
+        <p>Login successful!</p>
+
+        <p>
+            Your role:
+            <strong>{{ session["role"] }}</strong>
+        </p>
+
+        {% if session["role"] == "ADMIN" %}
+
+            <p>You have administrator access.</p>
+
+        {% else %}
+
+            <p>You have librarian access.</p>
+
+        {% endif %}
+
+        <form action="{{ url_for('logout') }}" method="POST">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <button type="submit">Logout</button>
+
+        </form>
+
+    </div>
+
+</body>
+
+</html>
