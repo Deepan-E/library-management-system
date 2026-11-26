@@ -2,3 +2,5 @@
 __pycache__/
 venv/
 Project-1_Library_Management_System.docx
+*.pyc
+.vscode/
