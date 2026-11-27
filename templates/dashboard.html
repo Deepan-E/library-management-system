@@ -1,54 +1,162 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+{% block title %}
+Dashboard | LibraryMS
+{% endblock %}
 
-    <title>Dashboard | Library Management System</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-</head>
+{% block content %}
 
-<body>
+<header class="page-header">
 
-    <div class="welcome-container">
+    <div>
+        <h1>Dashboard</h1>
 
-        <h1>Library Dashboard</h1>
+        <p>Welcome back, {{ session.get("username") }}!</p>
+    </div>
 
-        <h2>Welcome, {{ session["username"] }}</h2>
+    <span class="role-label">
+        {{ session.get("role") }}
+    </span>
 
-        <p>Login successful!</p>
+</header>
 
-        <p>
-            Your role:
-            <strong>{{ session["role"] }}</strong>
-        </p>
 
-        {% if session["role"] == "ADMIN" %}
+<!-- Statistics -->
 
-            <p>You have administrator access.</p>
+<section class="stats-grid">
 
-        {% else %}
+    <div class="stat-card blue">
+        <p>Total Book Titles</p>
+        <h2>{{ stats.total_books if stats else '—' }}</h2>
+        <span>Books in catalogue</span>
+    </div>
 
-            <p>You have librarian access.</p>
+    <div class="stat-card green">
+        <p>Available Copies</p>
+        <h2>{{ stats.available_copies if stats else '—' }}</h2>
+        <span>Ready to borrow</span>
+    </div>
 
-        {% endif %}
+    <div class="stat-card cyan">
+        <p>Active Members</p>
+        <h2>{{ stats.active_members if stats else '—' }}</h2>
+        <span>Eligible to borrow</span>
+    </div>
 
-        <form action="{{ url_for('logout') }}" method="POST">
+    <div class="stat-card purple">
+        <p>Issued Books</p>
+        <h2>{{ stats.issued_books if stats else '—' }}</h2>
+        <span>Currently borrowed</span>
+    </div>
 
-            <input type="hidden"
-                   name="csrf_token"
-                   value="{{ csrf_token() }}">
+    <div class="stat-card red">
+        <p>Overdue Books</p>
+        <h2>{{ stats.overdue_books if stats else '—' }}</h2>
+        <span>Past the due date</span>
+    </div>
 
-            <button type="submit">Logout</button>
+    <div class="stat-card orange">
+        <p>Fines Recorded</p>
+        <h2>₹{{ stats.total_fines if stats else '—' }}</h2>
+        <span>Fines on returned books</span>
+    </div>
 
-        </form>
+</section>
+
+
+<!-- Quick actions -->
+
+<section class="content-panel">
+
+    <h2>Quick Actions</h2>
+
+    <div class="quick-actions">
+
+        <button disabled>Add Book</button>
+
+        <button disabled>Register Member</button>
+
+        <button disabled>Issue Book</button>
+
+        <button disabled>Return Book</button>
 
     </div>
 
-</body>
+    <p class="muted">
+        These actions will be enabled as the modules are added.
+    </p>
 
-</html>
+</section>
+
+
+<!-- Recent transactions -->
+
+<section class="content-panel">
+
+    <h2>Recent Transactions</h2>
+
+    <div class="table-wrapper">
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+                    <th>Issue ID</th>
+                    <th>Book Title</th>
+                    <th>Member</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for item in transactions %}
+
+                    <tr>
+
+                        <td>{{ item.issue_id }}</td>
+
+                        <td>{{ item.title }}</td>
+
+                        <td>{{ item.full_name }}</td>
+
+                        <td>{{ item.issue_date }}</td>
+
+                        <td>{{ item.due_date }}</td>
+
+                        <td>
+
+                            <span class="status-label {{ item.display_status | lower }}">
+
+                                {{ item.display_status }}
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="6" class="empty-message">
+                            No transactions available to display.
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+{% endblock %}

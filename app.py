@@ -14,6 +14,7 @@ from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 
 import features
+import dashboard_data
 
 
 load_dotenv()
@@ -78,7 +79,18 @@ def dashboard():
         flash("Please log in first.", "error")
         return redirect(url_for("login"))
 
-    return render_template("dashboard.html")
+    stats = dashboard_data.get_dashboard_stats()
+
+    if stats is None:
+        flash("Unable to load dashboard data.", "error")
+
+    transactions = dashboard_data.get_recent_transactions()
+
+    return render_template(
+        "dashboard.html",
+        stats=stats,
+        transactions=transactions
+    )
 
 
 # Logout

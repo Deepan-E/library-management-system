@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}Library Management System{% endblock %}
+    </title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body class="app-body">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <h2>LibraryMS</h2>
+            <span>Management System</span>
+        </div>
+
+        <nav class="navigation">
+
+            <p class="nav-heading">MANAGEMENT</p>
+
+            <a href="{{ url_for('dashboard') }}"
+               class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                Dashboard
+            </a>
+
+            <span class="nav-link disabled">
+                Books
+            </span>
+
+            <span class="nav-link disabled">
+                Members
+            </span>
+
+            <span class="nav-link disabled">
+                Issue / Return
+            </span>
+
+            <span class="nav-link disabled">
+                Reports
+            </span>
+
+            {% if session.get("role") == "ADMIN" %}
+
+                <p class="nav-heading">SYSTEM</p>
+
+                <span class="nav-link disabled">
+                    Administration
+                </span>
+
+            {% endif %}
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="user-profile">
+
+                <strong>{{ session.get("username") }}</strong>
+
+                <span>{{ session.get("role") }}</span>
+
+            </div>
+
+            <form action="{{ url_for('logout') }}"
+                  method="POST">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <button type="submit" class="logout-button">
+                    Logout
+                </button>
+
+            </form>
+
+        </div>
+
+    </aside>
+
+    <main class="main-content">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% for category, message in messages %}
+
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+    </main>
+
+</body>
+
+</html>
