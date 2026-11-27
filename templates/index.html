@@ -1,32 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Library Management System</title>
+    <title>LBMS | Library Management System</title>
+
+    <link rel="icon"
+          href="{{ url_for('static', filename='images/logo.svg') }}">
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
+<body class="landing-page">
 
-    <div class="welcome-container">
+    <nav class="landing-nav">
 
-        <h1>Library Management System</h1>
+        <div class="brand-lockup">
 
-        <p>Welcome to the Library Management System.</p>
+            <img class="brand-logo"
+                 src="{{ url_for('static', filename='images/logo.svg') }}"
+                 alt="LBMS logo">
 
-        <p>Manage books, members, loans and reports
-           in one place.</p>
+            <span class="brand-name">LBMS</span>
 
-        <a href="{{ url_for('login') }}" class="primary-button">
-    Get Started
-</a>
+        </div>
 
-    </div>
+        <a class="primary-button"
+           href="{{ url_for('login') }}">
+            Sign In
+        </a>
+
+    </nav>
+
+    <main>
+
+        <section class="hero">
+
+            <span class="eyebrow">
+                LIBRARY MANAGEMENT SYSTEM
+            </span>
+
+            <h1>
+                Your library.<br>
+                <span class="gradient-text">
+                    Reimagined.
+                </span>
+            </h1>
+
+            <p>
+                Manage your books, members, borrowing
+                activities and library reports from
+                one powerful workspace.
+            </p>
+
+            <a class="primary-button"
+               href="{{ url_for('login') }}">
+                Get Started &rarr;
+            </a>
+
+        </section>
+
+        <section class="feature-grid">
+
+            <article class="feature-card">
+
+                <span class="feature-icon">01</span>
+
+                <h3>Book Management</h3>
+
+                <p>
+                    Organize your catalogue and track
+                    book availability effortlessly.
+                </p>
+
+            </article>
+
+            <article class="feature-card">
+
+                <span class="feature-icon">02</span>
+
+                <h3>Member Management</h3>
+
+                <p>
+                    Manage library members and their
+                    borrowing activities in one place.
+                </p>
+
+            </article>
+
+            <article class="feature-card">
+
+                <span class="feature-icon">03</span>
+
+                <h3>Library Insights</h3>
+
+                <p>
+                    Monitor transactions, overdue books
+                    and library performance.
+                </p>
+
+            </article>
+
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        LBMS &middot; Library Management System
+    </footer>
 
 </body>
+
 </html>

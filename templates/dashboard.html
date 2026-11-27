@@ -1,81 +1,131 @@
 {% extends "base.html" %}
 
 {% block title %}
-Dashboard | LibraryMS
+Dashboard | LBMS
 {% endblock %}
-
 
 {% block content %}
 
-<header class="page-header">
+<header class="welcome-banner">
 
     <div>
-        <h1>Dashboard</h1>
 
-        <p>Welcome back, {{ session.get("username") }}!</p>
+        <span class="banner-caption">
+            LIBRARY INTELLIGENCE
+        </span>
+
+        <h1>
+            Welcome back, {{ session.get("username") }}.
+        </h1>
+
+        <p>
+            Your entire library. One workspace.
+        </p>
+
+        <span class="role-label">
+            {{ session.get("role") }}
+        </span>
+
     </div>
 
-    <span class="role-label">
-        {{ session.get("role") }}
-    </span>
+    <img class="banner-logo"
+         src="{{ url_for('static', filename='images/logo.svg') }}"
+         alt="">
 
 </header>
 
 
-<!-- Statistics -->
+<section class="section-heading">
 
-<section class="stats-grid">
+    <h2>Library Overview</h2>
 
-    <div class="stat-card blue">
-        <p>Total Book Titles</p>
-        <h2>{{ stats.total_books if stats else '—' }}</h2>
-        <span>Books in catalogue</span>
-    </div>
-
-    <div class="stat-card green">
-        <p>Available Copies</p>
-        <h2>{{ stats.available_copies if stats else '—' }}</h2>
-        <span>Ready to borrow</span>
-    </div>
-
-    <div class="stat-card cyan">
-        <p>Active Members</p>
-        <h2>{{ stats.active_members if stats else '—' }}</h2>
-        <span>Eligible to borrow</span>
-    </div>
-
-    <div class="stat-card purple">
-        <p>Issued Books</p>
-        <h2>{{ stats.issued_books if stats else '—' }}</h2>
-        <span>Currently borrowed</span>
-    </div>
-
-    <div class="stat-card red">
-        <p>Overdue Books</p>
-        <h2>{{ stats.overdue_books if stats else '—' }}</h2>
-        <span>Past the due date</span>
-    </div>
-
-    <div class="stat-card orange">
-        <p>Fines Recorded</p>
-        <h2>₹{{ stats.total_fines if stats else '—' }}</h2>
-        <span>Fines on returned books</span>
-    </div>
+    <p>Current library statistics</p>
 
 </section>
 
 
-<!-- Quick actions -->
+<section class="stats-grid">
+
+    {% set cards = [
+        ("Total Book Titles", "total_books",
+         "Books in catalogue", "blue", "01"),
+
+        ("Available Copies", "available_copies",
+         "Ready to borrow", "green", "02"),
+
+        ("Active Members", "active_members",
+         "Registered active members", "cyan", "03"),
+
+        ("Issued Books", "issued_books",
+         "Currently borrowed", "purple", "04"),
+
+        ("Overdue Books", "overdue_books",
+         "Past the due date", "red", "05"),
+
+        ("Fines Recorded", "total_fines",
+         "Fines on returned books", "orange", "06")
+    ] %}
+
+    {% for label, key, description, color, number in cards %}
+
+        <article class="stat-card {{ color }}">
+
+            <div class="stat-top">
+
+                <p>{{ label }}</p>
+
+                <span class="stat-icon">
+                    {{ number }}
+                </span>
+
+            </div>
+
+            <h2>
+
+                {% if stats %}
+
+                    {% if key == "total_fines" %}
+                        ₹{{ "%.2f" | format(stats[key]) }}
+                    {% else %}
+                        {{ stats[key] }}
+                    {% endif %}
+
+                {% else %}
+
+                    &mdash;
+
+                {% endif %}
+
+            </h2>
+
+            <span class="stat-description">
+                {{ description }}
+            </span>
+
+            <div class="accent-line"></div>
+
+        </article>
+
+    {% endfor %}
+
+</section>
+
 
 <section class="content-panel">
 
-    <h2>Quick Actions</h2>
+    <div class="panel-heading">
+
+        <h2>Quick Actions</h2>
+
+        <p>Manage everyday library operations.</p>
+
+    </div>
 
     <div class="quick-actions">
 
-        <button disabled>Add Book</button>
+        <button disabled>+ Add Book</button>
 
-        <button disabled>Register Member</button>
+        <button disabled>+ Register Member</button>
 
         <button disabled>Issue Book</button>
 
@@ -84,17 +134,21 @@ Dashboard | LibraryMS
     </div>
 
     <p class="muted">
-        These actions will be enabled as the modules are added.
+        Actions will be enabled as modules are implemented.
     </p>
 
 </section>
 
 
-<!-- Recent transactions -->
-
 <section class="content-panel">
 
-    <h2>Recent Transactions</h2>
+    <div class="panel-heading">
+
+        <h2>Recent Transactions</h2>
+
+        <p>Latest five issue records.</p>
+
+    </div>
 
     <div class="table-wrapper">
 
@@ -119,7 +173,7 @@ Dashboard | LibraryMS
 
                     <tr>
 
-                        <td>{{ item.issue_id }}</td>
+                        <td>#{{ item.issue_id }}</td>
 
                         <td>{{ item.title }}</td>
 
@@ -144,9 +198,14 @@ Dashboard | LibraryMS
                 {% else %}
 
                     <tr>
-                        <td colspan="6" class="empty-message">
-                            No transactions available to display.
+
+                        <td colspan="6"
+                            class="empty-message">
+
+                            No transactions available.
+
                         </td>
+
                     </tr>
 
                 {% endfor %}
@@ -158,5 +217,9 @@ Dashboard | LibraryMS
     </div>
 
 </section>
+
+<footer class="dashboard-footer">
+    LBMS &middot; Library Management System
+</footer>
 
 {% endblock %}

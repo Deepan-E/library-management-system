@@ -6,76 +6,133 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Login | Library Management System</title>
+    <title>Sign In | LBMS</title>
+
+    <link rel="icon"
+          href="{{ url_for('static', filename='images/logo.svg') }}">
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
+<body class="auth-page">
 
-    <div class="login-container">
+    <section class="auth-visual">
 
-        <h1>Library Management System</h1>
+        <div class="brand-lockup">
 
-        <p class="subtitle">Sign in to your account</p>
+            <img class="brand-logo"
+                 src="{{ url_for('static', filename='images/logo.svg') }}"
+                 alt="LBMS logo">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
+            <span class="brand-name">LBMS</span>
 
-            {% for category, message in messages %}
+        </div>
 
-                <div class="alert {{ category }}">
-                    {{ message }}
+        <img class="auth-illustration"
+             src="{{ url_for('static', filename='images/logo.svg') }}"
+             alt="">
+
+        <h1>
+            Knowledge.<br>
+            <span class="gradient-text">
+                Organized.
+            </span>
+        </h1>
+
+        <p>
+            A modern workspace for managing your
+            library, empowering readers and
+            simplifying everyday operations.
+        </p>
+
+    </section>
+
+    <main class="auth-form-area">
+
+        <div class="login-container">
+
+            <span class="eyebrow">LBMS WORKSPACE</span>
+
+            <h1>Welcome back.</h1>
+
+            <p class="subtitle">
+                Sign in to continue to your dashboard.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endwith %}
+
+            <form action="{{ url_for('login') }}"
+                  method="POST">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <div class="form-group">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           placeholder="Enter your username"
+                           maxlength="30"
+                           autocomplete="username"
+                           required>
+
                 </div>
 
-            {% endfor %}
+                <div class="form-group">
 
-        {% endwith %}
+                    <label for="password">
+                        Password
+                    </label>
 
-        <form action="{{ url_for('login') }}" method="POST">
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           placeholder="Enter your password"
+                           autocomplete="current-password"
+                           required>
 
-            <input type="hidden"
-                   name="csrf_token"
-                   value="{{ csrf_token() }}">
+                </div>
 
-            <div class="form-group">
+                <button type="submit"
+                        class="login-button">
 
-                <label for="username">Username</label>
+                    Sign In &rarr;
 
-                <input type="text"
-                       id="username"
-                       name="username"
-                       placeholder="Enter your username"
-                       maxlength="30"
-                       autocomplete="username"
-                       required>
+                </button>
 
-            </div>
+            </form>
 
-            <div class="form-group">
+            <a class="back-link"
+               href="{{ url_for('home') }}">
 
-                <label for="password">Password</label>
+                &larr; Back to Home
 
-                <input type="password"
-                       id="password"
-                       name="password"
-                       placeholder="Enter your password"
-                       autocomplete="current-password"
-                       required>
+            </a>
 
-            </div>
+            <p class="security-note">
+                Authorized library personnel only.
+            </p>
 
-            <button type="submit" class="login-button">
-                Sign In
-            </button>
+        </div>
 
-        </form>
-
-        <a class="back-link" href="{{ url_for('home') }}">
-            Back to Home
-        </a>
-
-    </div>
+    </main>
 
 </body>
 

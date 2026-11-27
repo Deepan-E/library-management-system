@@ -3,13 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
-
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
     <title>
-        {% block title %}Library Management System{% endblock %}
+        {% block title %}LBMS{% endblock %}
     </title>
+
+    <link rel="icon"
+          href="{{ url_for('static', filename='images/logo.svg') }}">
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
@@ -22,33 +24,50 @@
 
     <aside class="sidebar">
 
-        <div class="brand">
-            <h2>LibraryMS</h2>
-            <span>Management System</span>
+        <div class="brand-lockup">
+
+            <img class="brand-logo"
+                 src="{{ url_for('static', filename='images/logo.svg') }}"
+                 alt="LBMS logo">
+
+            <div>
+                <span class="brand-name">LBMS</span>
+                <span class="brand-caption">
+                    Library Management
+                </span>
+            </div>
+
         </div>
 
         <nav class="navigation">
 
-            <p class="nav-heading">MANAGEMENT</p>
+            <p class="nav-heading">WORKSPACE</p>
 
             <a href="{{ url_for('dashboard') }}"
                class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+
+                <span class="nav-icon">&#9638;</span>
                 Dashboard
+
             </a>
 
             <span class="nav-link disabled">
+                <span class="nav-icon">&#9636;</span>
                 Books
             </span>
 
             <span class="nav-link disabled">
+                <span class="nav-icon">&#9823;</span>
                 Members
             </span>
 
             <span class="nav-link disabled">
-                Issue / Return
+                <span class="nav-icon">&#8644;</span>
+                Circulation
             </span>
 
             <span class="nav-link disabled">
+                <span class="nav-icon">&#9641;</span>
                 Reports
             </span>
 
@@ -57,6 +76,7 @@
                 <p class="nav-heading">SYSTEM</p>
 
                 <span class="nav-link disabled">
+                    <span class="nav-icon">&#9881;</span>
                     Administration
                 </span>
 
@@ -68,9 +88,23 @@
 
             <div class="user-profile">
 
-                <strong>{{ session.get("username") }}</strong>
+                <div class="avatar">
 
-                <span>{{ session.get("role") }}</span>
+                    {{ session.get("username", "U")[0] | upper }}
+
+                </div>
+
+                <div class="user-details">
+
+                    <strong>
+                        {{ session.get("username") }}
+                    </strong>
+
+                    <span>
+                        {{ session.get("role") }}
+                    </span>
+
+                </div>
 
             </div>
 
@@ -81,8 +115,11 @@
                        name="csrf_token"
                        value="{{ csrf_token() }}">
 
-                <button type="submit" class="logout-button">
-                    Logout
+                <button type="submit"
+                        class="logout-button">
+
+                    Sign Out
+
                 </button>
 
             </form>
@@ -92,6 +129,17 @@
     </aside>
 
     <main class="main-content">
+
+        <div class="topbar">
+
+            <span>LBMS / Workspace</span>
+
+            <span class="online-indicator">
+                <span class="online-dot"></span>
+                Session active
+            </span>
+
+        </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
 
