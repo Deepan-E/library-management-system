@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Members | LBMS{% endblock %}
+
+{% block content %}
+
+<header class="module-header">
+
+    <div>
+        <h1>Members Management</h1>
+        <p>Manage your library community.</p>
+    </div>
+
+    <a href="#register" class="primary-button">+ Register Member</a>
+
+</header>
+
+<section class="stats-grid">
+
+    {% for label, value, color in [
+        ("Total Members", total, "purple"),
+        ("Active Members", active, "green"),
+        ("Inactive Members", total - active, "red")
+    ] %}
+
+        <article class="stat-card {{ color }}">
+            <p>{{ label }}</p>
+            <h2>{{ value }}</h2>
+            <div class="accent-line"></div>
+        </article>
+
+    {% endfor %}
+
+</section>
+
+<section class="content-panel" id="register">
+
+    <div class="panel-heading">
+        <h2>Register New Member</h2>
+        <p>Add a member to your library.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('members') }}">
+
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-grid">
+
+            <div class="form-group">
+
+                <label for="full_name">Full Name</label>
+
+                <input id="full_name"
+                       name="full_name"
+                       maxlength="60"
+                       placeholder="Enter full name"
+                       required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="phone">Phone Number</label>
+
+                <input id="phone"
+                       name="phone"
+                       type="tel"
+                       pattern="[0-9]{10}"
+                       maxlength="10"
+                       placeholder="10-digit phone number"
+                       required>
+
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button type="submit">+ Register Member</button>
+        </div>
+
+    </form>
+
+</section>
+
+<section class="content-panel">
+
+    <div class="panel-heading">
+        <h2>Member Directory</h2>
+        <p>Search and manage registered members.</p>
+    </div>
+
+    <form class="search-bar" method="GET">
+
+        <input class="search-input"
+               name="q"
+               value="{{ q }}"
+               placeholder="Search by name or phone..."
+               maxlength="60">
+
+        <button type="submit">Search</button>
+
+        <a href="{{ url_for('members') }}" class="secondary-button">
+            Clear
+        </a>
+
+    </form>
+
+    <div class="table-wrapper">
+
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Member</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for m in rows %}
+
+                    <tr>
+
+                        <td>#{{ m.member_id }}</td>
+
+                        <td>
+                            <div class="member-cell">
+                                <div class="avatar">{{ m.full_name[0] | upper }}</div>
+                                <strong>{{ m.full_name }}</strong>
+                            </div>
+                        </td>
+
+                        <td>{{ m.phone }}</td>
+
+                        <td>
+
+                            {% if m.is_active %}
+                                <span class="status-label available">Active</span>
+                            {% else %}
+                                <span class="status-label unavailable">Inactive</span>
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            <div class="table-actions">
+
+                                <a class="action-button"
+                                   href="{{ url_for('circulation', member_id=m.member_id) }}#loans">
+                                    View Loans
+                                </a>
+
+                                {% if session.get("role") == "ADMIN" and m.is_active %}
+
+                                    <form method="POST"
+                                          action="{{ url_for('deactivate_member', member_id=m.member_id) }}"
+                                          onsubmit="return confirm('Deactivate this member?');">
+
+                                        <input type="hidden"
+                                               name="csrf_token"
+                                               value="{{ csrf_token() }}">
+
+                                        <button class="danger-button" type="submit">
+                                            Deactivate
+                                        </button>
+
+                                    </form>
+
+                                {% endif %}
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="5">No members found.</td>
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+{% endblock %}

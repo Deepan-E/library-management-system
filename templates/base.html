@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>
-        {% block title %}LBMS{% endblock %}
-    </title>
+    <title>{% block title %}LBMS{% endblock %}</title>
 
     <link rel="icon"
           href="{{ url_for('static', filename='images/logo.svg') }}">
@@ -18,6 +18,10 @@
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='dashboard.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='modules.css') }}">
+
 </head>
 
 <body class="app-body">
@@ -32,9 +36,7 @@
 
             <div>
                 <span class="brand-name">LBMS</span>
-                <span class="brand-caption">
-                    Library Management
-                </span>
+                <span class="brand-caption">Library Management</span>
             </div>
 
         </div>
@@ -43,42 +45,43 @@
 
             <p class="nav-heading">WORKSPACE</p>
 
-            <a href="{{ url_for('dashboard') }}"
-               class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            {% set links = [
+                ('dashboard', 'Dashboard', '▦', ['dashboard']),
+                ('books', 'Books', '▤', ['books', 'add_book', 'edit_book']),
+                ('members', 'Members', '♙', ['members']),
+                ('circulation', 'Circulation', '⇄', ['circulation']),
+                ('report_page', 'Reports', '▥', ['report_page'])
+            ] %}
 
-                <span class="nav-icon">&#9638;</span>
-                Dashboard
+            {% for endpoint, name, symbol, active_pages in links %}
 
-            </a>
+                <a href="{{ url_for(endpoint) }}"
+                   class="nav-link
+                   {% if request.endpoint in active_pages %}active{% endif %}">
 
-            <span class="nav-link disabled">
-                <span class="nav-icon">&#9636;</span>
-                Books
-            </span>
+                    <span class="nav-icon">{{ symbol }}</span>
 
-            <span class="nav-link disabled">
-                <span class="nav-icon">&#9823;</span>
-                Members
-            </span>
+                    {{ name }}
 
-            <span class="nav-link disabled">
-                <span class="nav-icon">&#8644;</span>
-                Circulation
-            </span>
+                </a>
 
-            <span class="nav-link disabled">
-                <span class="nav-icon">&#9641;</span>
-                Reports
-            </span>
+            {% endfor %}
 
             {% if session.get("role") == "ADMIN" %}
 
                 <p class="nav-heading">SYSTEM</p>
 
-                <span class="nav-link disabled">
-                    <span class="nav-icon">&#9881;</span>
+                <a href="{{ url_for('administration') }}"
+                   class="nav-link
+                   {% if request.endpoint in ['administration', 'dsa'] %}
+                       active
+                   {% endif %}">
+
+                    <span class="nav-icon">⚙</span>
+
                     Administration
-                </span>
+
+                </a>
 
             {% endif %}
 
@@ -89,37 +92,27 @@
             <div class="user-profile">
 
                 <div class="avatar">
-
-                    {{ session.get("username", "U")[0] | upper }}
-
+                    {{ (session.get("username") or "U")[0] | upper }}
                 </div>
 
                 <div class="user-details">
 
-                    <strong>
-                        {{ session.get("username") }}
-                    </strong>
+                    <strong>{{ session.get("username") }}</strong>
 
-                    <span>
-                        {{ session.get("role") }}
-                    </span>
+                    <span>{{ session.get("role") }}</span>
 
                 </div>
 
             </div>
 
-            <form action="{{ url_for('logout') }}"
-                  method="POST">
+            <form action="{{ url_for('logout') }}" method="POST">
 
                 <input type="hidden"
                        name="csrf_token"
                        value="{{ csrf_token() }}">
 
-                <button type="submit"
-                        class="logout-button">
-
+                <button type="submit" class="logout-button">
                     Sign Out
-
                 </button>
 
             </form>

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Administration | LBMS{% endblock %}
+
+{% block content %}
+
+<header class="module-header">
+
+    <div>
+        <h1>Administration</h1>
+        <p>Manage system access and performance.</p>
+    </div>
+
+    <span class="role-label">ADMIN ACCESS</span>
+
+</header>
+
+<section class="content-panel">
+
+    <div class="panel-heading">
+        <h2>Create User Account</h2>
+        <p>Provide authorized personnel with access to LBMS.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('administration') }}">
+
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-grid">
+
+            <div class="form-group">
+
+                <label for="username">Username</label>
+
+                <input id="username"
+                       name="username"
+                       minlength="3"
+                       maxlength="30"
+                       placeholder="Enter username"
+                       autocomplete="off"
+                       required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="password">Password</label>
+
+                <input id="password"
+                       name="password"
+                       type="password"
+                       minlength="6"
+                       maxlength="256"
+                       placeholder="Enter password"
+                       autocomplete="new-password"
+                       required>
+
+            </div>
+
+            <div class="form-group full-width">
+
+                <label for="role">Account Role</label>
+
+                <select id="role" name="role" required>
+
+                    <option value="LIBRARIAN">LIBRARIAN</option>
+                    <option value="ADMIN">ADMIN</option>
+
+                </select>
+
+                <span class="field-help">
+                    ADMIN has full access. LIBRARIAN has restricted access.
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button type="submit">+ Create Account</button>
+        </div>
+
+    </form>
+
+</section>
+
+<section class="content-panel">
+
+    <div class="panel-heading">
+        <h2>System Users</h2>
+        <p>Registered LBMS personnel.</p>
+    </div>
+
+    <div class="table-wrapper">
+
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for u in rows %}
+
+                    <tr>
+
+                        <td>#{{ u.user_id }}</td>
+
+                        <td>
+                            <div class="member-cell">
+
+                                <div class="avatar">
+                                    {{ u.username[0] | upper }}
+                                </div>
+
+                                {{ u.username }}
+
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="role-label">{{ u.role }}</span>
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="3">No users found.</td>
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+<section class="content-panel">
+
+    <div class="panel-heading">
+
+        <h2>DSA Performance Lab</h2>
+
+        <p>
+            Compare search algorithms using 100,000
+            generated book titles and 200 searches.
+        </p>
+
+    </div>
+
+    <div class="algorithm-grid">
+
+        <article class="algorithm-card">
+
+            <span>01</span>
+
+            <h3>Linear Search</h3>
+
+            <strong>O(n)</strong>
+
+            <p>Checks each element sequentially.</p>
+
+        </article>
+
+        <article class="algorithm-card">
+
+            <span>02</span>
+
+            <h3>Binary Search</h3>
+
+            <strong>O(log n)</strong>
+
+            <p>Repeatedly halves a sorted search space.</p>
+
+        </article>
+
+        <article class="algorithm-card">
+
+            <span>03</span>
+
+            <h3>Dictionary Lookup</h3>
+
+            <strong>O(1) average</strong>
+
+            <p>Uses hashing for direct key lookup.</p>
+
+        </article>
+
+    </div>
+
+    <form method="POST" action="{{ url_for('dsa') }}">
+
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-actions">
+            <button type="submit">Run Benchmark &rarr;</button>
+        </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

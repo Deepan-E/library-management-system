@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Reports | LBMS{% endblock %}
+
+{% block content %}
+
+<header class="module-header">
+
+    <div>
+        <h1>{{ heading }}</h1>
+        <p>Monitor library performance and operational insights.</p>
+    </div>
+
+    {% if request.endpoint == "dsa" %}
+
+        <a href="{{ url_for('administration') }}"
+           class="secondary-button">
+            Back to Administration
+        </a>
+
+    {% endif %}
+
+</header>
+
+{% if request.endpoint == "dsa" %}
+
+    <div class="info-box">
+
+        <strong>Algorithm Performance Comparison</strong>
+
+        <p>
+            The benchmark compares linear search, binary search
+            and dictionary lookup using 100,000 generated titles.
+            Setup time is measured separately from search time.
+        </p>
+
+    </div>
+
+{% endif %}
+
+{% for label, rows in sections %}
+
+    <section class="content-panel">
+
+        <div class="panel-heading">
+
+            <h2>{{ label }}</h2>
+
+            <p>{{ rows | length }} records</p>
+
+        </div>
+
+        {% if rows %}
+
+            <div class="table-wrapper">
+
+                <table class="data-table">
+
+                    <thead>
+
+                        <tr>
+
+                            {% for key in rows[0].keys() %}
+
+                                <th>{{ key.replace("_", " ") | title }}</th>
+
+                            {% endfor %}
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for row in rows %}
+
+                            <tr>
+
+                                {% for key, value in row.items() %}
+
+                                    <td>
+
+                                        {% if key == "total_fine" %}
+
+                                            <span class="fine-value">₹{{ value }}</span>
+
+                                        {% elif key == "days_late" %}
+
+                                            <span class="status-label unavailable">
+                                                {{ value }} days
+                                            </span>
+
+                                        {% elif key == "speedup" %}
+
+                                            <span class="status-label available">
+                                                {{ value }}x
+                                            </span>
+
+                                        {% else %}
+
+                                            {{ value }}
+
+                                        {% endif %}
+
+                                    </td>
+
+                                {% endfor %}
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <h3>No records available</h3>
+
+                <p>No matching records were returned.</p>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+{% endfor %}
+
+{% endblock %}

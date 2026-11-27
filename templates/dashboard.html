@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}
-Dashboard | LBMS
-{% endblock %}
+{% block title %}Dashboard | LBMS{% endblock %}
 
 {% block content %}
 
@@ -10,21 +8,13 @@ Dashboard | LBMS
 
     <div>
 
-        <span class="banner-caption">
-            LIBRARY INTELLIGENCE
-        </span>
+        <span class="banner-caption">LIBRARY INTELLIGENCE</span>
 
-        <h1>
-            Welcome back, {{ session.get("username") }}.
-        </h1>
+        <h1>Welcome back, {{ session.get("username") }}.</h1>
 
-        <p>
-            Your entire library. One workspace.
-        </p>
+        <p>Your entire library. One workspace.</p>
 
-        <span class="role-label">
-            {{ session.get("role") }}
-        </span>
+        <span class="role-label">{{ session.get("role") }}</span>
 
     </div>
 
@@ -34,82 +24,63 @@ Dashboard | LBMS
 
 </header>
 
-
 <section class="section-heading">
 
     <h2>Library Overview</h2>
 
-    <p>Current library statistics</p>
+    <p>Live library statistics</p>
 
 </section>
-
 
 <section class="stats-grid">
 
     {% set cards = [
-        ("Total Book Titles", "total_books",
-         "Books in catalogue", "blue", "01"),
-
-        ("Available Copies", "available_copies",
-         "Ready to borrow", "green", "02"),
-
-        ("Active Members", "active_members",
-         "Registered active members", "cyan", "03"),
-
-        ("Issued Books", "issued_books",
-         "Currently borrowed", "purple", "04"),
-
-        ("Overdue Books", "overdue_books",
-         "Past the due date", "red", "05"),
-
-        ("Fines Recorded", "total_fines",
-         "Fines on returned books", "orange", "06")
+        ("Total Book Titles", "total_books", "Books in catalogue", "blue", "01"),
+        ("Available Copies", "available_copies", "Ready to borrow", "green", "02"),
+        ("Active Members", "active_members", "Registered members", "cyan", "03"),
+        ("Issued Books", "issued_books", "Currently borrowed", "purple", "04"),
+        ("Overdue Books", "overdue_books", "Past the due date", "red", "05"),
+        ("Fines Recorded", "total_fines", "Recorded late fees", "orange", "06")
     ] %}
 
     {% for label, key, description, color, number in cards %}
 
-        <article class="stat-card {{ color }}">
+        {% if key != "total_fines" or session.get("role") == "ADMIN" %}
 
-            <div class="stat-top">
+            <article class="stat-card {{ color }}">
 
-                <p>{{ label }}</p>
+                <div class="stat-top">
+                    <p>{{ label }}</p>
+                    <span class="stat-icon">{{ number }}</span>
+                </div>
 
-                <span class="stat-icon">
-                    {{ number }}
-                </span>
+                <h2>
 
-            </div>
+                    {% if stats.get(key) is not none %}
 
-            <h2>
+                        {% if key == "total_fines" %}
+                            ₹{{ "%.2f" | format(stats[key]) }}
+                        {% else %}
+                            {{ stats[key] }}
+                        {% endif %}
 
-                {% if stats %}
-
-                    {% if key == "total_fines" %}
-                        ₹{{ "%.2f" | format(stats[key]) }}
                     {% else %}
-                        {{ stats[key] }}
+                        &mdash;
                     {% endif %}
 
-                {% else %}
+                </h2>
 
-                    &mdash;
+                <span class="stat-description">{{ description }}</span>
 
-                {% endif %}
+                <div class="accent-line"></div>
 
-            </h2>
+            </article>
 
-            <span class="stat-description">
-                {{ description }}
-            </span>
-
-            <div class="accent-line"></div>
-
-        </article>
+        {% endif %}
 
     {% endfor %}
 
 </section>
-
 
 <section class="content-panel">
 
@@ -123,22 +94,25 @@ Dashboard | LBMS
 
     <div class="quick-actions">
 
-        <button disabled>+ Add Book</button>
+        <a href="{{ url_for('add_book') }}" class="action-button">
+            + Add Book
+        </a>
 
-        <button disabled>+ Register Member</button>
+        <a href="{{ url_for('members') }}#register" class="action-button">
+            + Register Member
+        </a>
 
-        <button disabled>Issue Book</button>
+        <a href="{{ url_for('circulation') }}#issue" class="action-button">
+            Issue Book
+        </a>
 
-        <button disabled>Return Book</button>
+        <a href="{{ url_for('circulation') }}#loans" class="action-button">
+            Return Book
+        </a>
 
     </div>
 
-    <p class="muted">
-        Actions will be enabled as modules are implemented.
-    </p>
-
 </section>
-
 
 <section class="content-panel">
 
@@ -146,7 +120,7 @@ Dashboard | LBMS
 
         <h2>Recent Transactions</h2>
 
-        <p>Latest five issue records.</p>
+        <p>Latest five library transactions.</p>
 
     </div>
 
@@ -155,7 +129,6 @@ Dashboard | LBMS
         <table class="data-table">
 
             <thead>
-
                 <tr>
                     <th>Issue ID</th>
                     <th>Book Title</th>
@@ -164,7 +137,6 @@ Dashboard | LBMS
                     <th>Due Date</th>
                     <th>Status</th>
                 </tr>
-
             </thead>
 
             <tbody>
@@ -172,40 +144,23 @@ Dashboard | LBMS
                 {% for item in transactions %}
 
                     <tr>
-
                         <td>#{{ item.issue_id }}</td>
-
                         <td>{{ item.title }}</td>
-
                         <td>{{ item.full_name }}</td>
-
                         <td>{{ item.issue_date }}</td>
-
                         <td>{{ item.due_date }}</td>
 
                         <td>
-
                             <span class="status-label {{ item.display_status | lower }}">
-
                                 {{ item.display_status }}
-
                             </span>
-
                         </td>
-
                     </tr>
 
                 {% else %}
 
                     <tr>
-
-                        <td colspan="6"
-                            class="empty-message">
-
-                            No transactions available.
-
-                        </td>
-
+                        <td colspan="6">No transactions available.</td>
                     </tr>
 
                 {% endfor %}
